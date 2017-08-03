@@ -3,6 +3,7 @@
 
 from make import HtmlFileReader
 
+
 def test_read_metadata():
     hfr = HtmlFileReader('no_filename')
 
