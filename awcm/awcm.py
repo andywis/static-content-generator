@@ -130,6 +130,8 @@ class HtmlFileReader:
 
         meta_data = {'title': title}
 
+        meta_data['_raw_metas'] = soup.find_all('meta')
+
         return {'content': page_content, 'title': title, 'meta': meta_data}
 
     def find_metadata(self, html_in):
