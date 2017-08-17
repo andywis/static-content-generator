@@ -21,6 +21,7 @@ TODO:
 
 """
 
+from collections import defaultdict
 import os
 import re
 import shutil
@@ -130,7 +131,30 @@ class HtmlFileReader:
 
         meta_data = {'title': title}
 
-        meta_data['_raw_metas'] = soup.find_all('meta')
+        all_meta_tags = soup.find_all('meta')
+        meta_data['_raw_metas'] = all_meta_tags
+        # Valid meta-tags are based on the tags supported by Pelican, with a
+        # few extra ones that I consider useful (e.g. a page can be in
+        # multiple categories)
+        # See http://docs.getpelican.com/en/3.6.3/content.html#file-metadata
+        valid_metatag_names = ['authors', 'categories', 'category', 'date',
+                               'modified', 'summary', 'tags', ]
+        for meta_tag in all_meta_tags:
+            # e.g <meta name="category" content="misc" />
+            for attr in valid_metatag_names:
+                if 'name' in meta_tag.attrs.keys():
+                    if (meta_tag['name'] == attr and
+                            'content' in meta_tag.attrs.keys()):
+
+                        # Special case: merge category and categories
+                        if attr == 'category':
+                            attr = 'categories'
+
+                        # Create a blank if it doesn't exist
+                        if attr not in meta_data.keys():
+                            meta_data[attr] = meta_tag['content']
+                        else:
+                            meta_data[attr] += ', ' + meta_tag['content']
 
         return {'content': page_content, 'title': title, 'meta': meta_data}
 
