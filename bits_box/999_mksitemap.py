@@ -9,12 +9,12 @@ some data-files from the data.
 This component generator creates a sitemap and navigation pages from the
 data-files.
 
-The numbering of these scripts allows other component generators to modify the data
-as needed.
+The numbering of these scripts allows other component generators to modify the
+data as needed.
 
-For example, a generated page may wish to append to the list of page categories, and
-have its page appear in the sitemap, or a component generator could be used to *remove*
-a page from the sitemap.
+For example, a generated page may wish to append to the list of page 
+categories, and have its page appear in the sitemap, or a component generator
+could be used to *remove* a page from the sitemap.
 
 N.B. The navigation pages themselves are *not* added to set of pages in the
 sitemap.
@@ -30,6 +30,7 @@ META_DIR = '../_meta'
 SITEMAP_FILE = '000_nav_all_files.html'
 CATEGORY_FILE_FMT = '000_nav_%s_%s.html'
 
+
 def create_sitemap():
     """
     Construct a sitemap of all "real" pages 
@@ -42,14 +43,16 @@ def create_sitemap():
         if '.html' in page:
             all_pages.append(page)
 
-    sitemap_html = ['<title>Sitemap</title><body><div>TODO: Needs to read from 000_sitemap.json instead.!!! <ul>']
+    sitemap_html = ['<title>Sitemap</title><body><div>',
+                    'TODO: Needs to read from 000_sitemap.json instead.!!!',
+                    '<ul>']
     for page in all_pages:
         html = awcm.HtmlFileReader(os.path.join(CONTENT_DIR, page))
         page_data = html.read()
 
         # print(page_data['title'])
-        sitemap_html.append('<li><a href="%s">%s</a></li>' % (page, page_data['title']))
-
+        sitemap_html.append('<li><a href="%s">%s</a></li>' % (
+            page, page_data['title']))
     sitemap_html.append('</ul></div></body>')
 
     with open(os.path.join(META_DIR, SITEMAP_FILE), 'w') as fhout:
@@ -71,32 +74,38 @@ def create_category_pages(data_file, keyword_name):
             try:
                 categories = json.load(fh)
             except ValueError as exc:
-                print("  [FAIL] Unable to read %s data %s" % (keyword_name, exc))
+                print("  [FAIL] Unable to read %s data %s" % (keyword_name,
+                                                              exc))
+                categories = None
                 exit()
 
             for kateg, pages in categories.iteritems():
-                print("  [info] %s '%s'. pages: %r" % (keyword_name, kateg, pages))
+                print("  [info] %s '%s'. pages: %r" % (keyword_name, kateg,
+                                                       pages))
                 
                 title = 'Articles with %s %s' % (keyword_name, kateg)
 
                 # e.g. ../_meta/000_nav_category_misc.html
                 # or   ../_meta/000_nav_tag_saxophone.html
-                categ_filename = CATEGORY_FILE_FMT % (keyword_name.lower(), kateg)
-                page_html = ['<title>%s</title><body>' % title]
-                page_html.append('<ul>')
+                categ_filename = CATEGORY_FILE_FMT % (keyword_name.lower(),
+                                                      kateg)
+                page_html = [
+                    '<meta name="template" content="navigation.thtml />',
+                    '<title>%s</title><body>' % title,
+                    '<ul>'
+                ]
                 for page in pages:
-                    # TODO: load each page and extract a summary, rather than just the filename
+                    # TODO: load each page and extract a summary, rather than
+                    # just the filename
                     page_html.append('<li><a href="%s">%s</a>' % (page, page))
                 page_html.append('<ul>')
                 page_html.append('</body>')
                 print("  [info] Saving to %s" % categ_filename)
-                with open(os.path.join(META_DIR, categ_filename), 'w') as fhout:
+                with open(
+                        os.path.join(META_DIR, categ_filename), 'w') as fhout:
                     fhout.write("\n".join(page_html))
     else:
         print("There isn't a %s file" % data_file)
-
-
-
 
 
 # # TODO: fish the categories out of each page

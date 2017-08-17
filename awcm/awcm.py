@@ -32,8 +32,7 @@ import jinja2
 
 CONFIG = {
     'theme': 'balquidhur',
-    # 'default_template': 'page.thtml',
-    'start_page_template': 'common.thtml',
+    'default_template': 'common.thtml',
     'content_dir': './content',
     'templates_dir': './templates',
     'output_path': './output',
@@ -138,7 +137,8 @@ class HtmlFileReader:
         # multiple categories)
         # See http://docs.getpelican.com/en/3.6.3/content.html#file-metadata
         valid_metatag_names = ['authors', 'categories', 'category', 'date',
-                               'modified', 'summary', 'tags', ]
+                               'modified', 'summary', 'tags', 'theme',
+                               'template']
         for meta_tag in all_meta_tags:
             # e.g <meta name="category" content="misc" />
             for attr in valid_metatag_names:
@@ -204,7 +204,7 @@ def make_pages_from_template(templates_dir, output_dir):
             if CONFIG['debug']:
                 print("Writing %s from %s" % (file_path, input_source))
             theme_name = CONFIG['theme']
-            template = CONFIG['start_page_template']
+            template = CONFIG['default_template']
 
             article_data = HtmlFileReader(
                 os.path.join(input_source, file_path)).read()
