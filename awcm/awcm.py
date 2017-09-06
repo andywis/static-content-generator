@@ -22,6 +22,7 @@ TODO:
 """
 
 from collections import defaultdict
+import json
 import os
 import re
 import shutil
@@ -36,7 +37,7 @@ CONFIG = {
     'content_dir': './content',
     'templates_dir': './templates',
     'output_path': './output',
-    'debug': False,
+    'debug': True,
 }
 
 
@@ -183,6 +184,10 @@ class TemplateWriter:
             theme_name: name of the theme
             template_name: name of the template
         """
+
+        if template_name[-6:] != '.thtml':
+            template_name = template_name + '.thtml'
+
         template = self.read(os.path.join(theme_name,
                                           'templates',
                                           template_name))
@@ -193,44 +198,89 @@ class TemplateWriter:
         with open(full_save_path, 'w') as output_fh:
             output_fh.write(template.render(tokens))
 
+def get_tag_list_as_html():
+    """
+    Generate a <UL> list of tags to be injected into the template
+    """
+    tags_file = os.path.join(CONFIG['output_path'], '000_tags.json')
+    nav_page_fmt = '000_nav_tag_%s.html'
+    return get_tag_or_category_as_html(tags_file, nav_page_fmt)
+
+def get_category_list_as_html():
+    """
+    Generate a <UL> list of categories to be injected into the template
+    """
+    categories_file = os.path.join(CONFIG['output_path'], '000_categories.json')
+    nav_page_fmt = '000_nav_category_%s.html'
+    return get_tag_or_category_as_html(categories_file, nav_page_fmt)
+   
+def get_tag_or_category_as_html(data_file, nav_page_fmt):
+    """ Does both Tags and Categories, as the logic is identical """
+    if os.path.exists(data_file):
+        with open(data_file) as data_fh:
+            all_tags = json.load(data_fh)
+            html = ['<ul>']
+            for tag in all_tags.keys():
+                url = nav_page_fmt % tag
+                html.append('<li><a href="%s">%s</a> (%d)</li>' % (url, tag, len(all_tags[tag])))
+            html.append('</ul>')
+            # print(html)
+            return ''.join(html)
+    return ''
+    
+
+
 
 def make_pages_from_template(templates_dir, output_dir):
     t = TemplateWriter(templates_dir)
 
     for input_source in [CONFIG['content_dir'], '_meta']:
-
         for file_path in get_all_filenames(input_source):
+            if file_path.split('.')[-1] in ['html', 'htm']:
+               
+                if CONFIG['debug']:
+                    print("Writing %s from %s" % (file_path, input_source))
 
-            if CONFIG['debug']:
-                print("Writing %s from %s" % (file_path, input_source))
-            theme_name = CONFIG['theme']
-            template = CONFIG['default_template']
+                theme_name = CONFIG['theme']
+                template = CONFIG['default_template']
 
-            article_data = HtmlFileReader(
-                os.path.join(input_source, file_path)).read()
+                article_data = HtmlFileReader(
+                    os.path.join(input_source, file_path)).read()
 
-            tokens = {'title': article_data['title'],
-                      'article': article_data['content']}
+                if 'template' in article_data['meta'].keys():
+                    print("  custom template: " + article_data['meta']['template'])
+                    template = article_data['meta']['template']
 
-            # everything about a page:
-            #   - file_path (source file)
-            #   - theme_name (from config, could be overridden in the metadata)
-            #   - article_data
-            #   - template (name of the template to use)
-            #   - output_file_path (currently same as source path; could be
-            #           overridden in metadata)
+                tokens = {'title': article_data['title'],
+                          'article': article_data['content'],
+                          'tags_html': get_tag_list_as_html(),
+                          'categories_html': get_category_list_as_html(),
+                          }
 
-            full_output_path = os.path.join(output_dir, file_path)
-            print("writing to %s" % full_output_path)
+                # everything about a page:
+                #   - file_path (source file)
+                #   - theme_name (from config, could be overridden in the metadata)
+                #   - article_data
+                #   - template (name of the template to use)
+                #   - output_file_path (currently same as source path; could be
+                #           overridden in metadata)
 
-            t.write(output_dir=output_dir,
-                    output_file_path=file_path,
-                    theme_name=theme_name,
-                    template_name=template,
-                    tokens=tokens)
+                full_output_path = os.path.join(output_dir, file_path)
+                
+                t.write(output_dir=output_dir,
+                        output_file_path=file_path,
+                        theme_name=theme_name,
+                        template_name=template,
+                        tokens=tokens)
+                # TODO: Collect the theme names as we go.
 
-        # TODO: Collect the theme names as we go.
-
+            else:
+                if CONFIG['debug']:
+                    print("Not Templatising %s" % file_path)
+                # Just copy the file unmodified.
+                shutil.copy(os.path.join(input_source, file_path),
+                            os.path.join(output_dir, file_path))
+        
 
 def main():
     # Ensure _meta and output folders exist

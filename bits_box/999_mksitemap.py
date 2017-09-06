@@ -90,7 +90,7 @@ def create_category_pages(data_file, keyword_name):
                 categ_filename = CATEGORY_FILE_FMT % (keyword_name.lower(),
                                                       kateg)
                 page_html = [
-                    '<meta name="template" content="navigation.thtml />',
+                    '<meta name="template" content="navigation.thtml" />',
                     '<title>%s</title><body>' % title,
                     '<ul>'
                 ]
