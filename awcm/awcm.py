@@ -192,7 +192,7 @@ class TemplateWriter:
                                           template_name))
 
         tokens['back_path'] = get_back_path(output_file_path)
-        tokens['theme_path'] = tokens['back_path'] + '/th/' + theme_name
+        tokens['theme_path'] = tokens['back_path'] + 'th/' + theme_name + '/'
         full_save_path = os.path.join(output_dir, output_file_path)
 
         with open(full_save_path, 'w') as output_fh:
