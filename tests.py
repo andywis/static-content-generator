@@ -159,13 +159,17 @@ def test_html_encode_html():
 #   copy_static_files -
 #   HtmlFileReader.load()
 #   HtmlFileReader.read()
+#       lots of filesystem interaction.
 #   TemplateWriter.read()
 #   TemplateWriter.write()
 #       TemplateWriter could take a custom jinja2 loader for
 #       testing purposes.
-# get_tag_or_category_as_html()
-# get_tag_list_as_html()
-# get category_list_as_html()
+#
+# Maybe these should be in an object related to the generated files.
+# They also have a lot of system interaction.
+#   get_tag_or_category_as_html()
+#   get_tag_list_as_html()
+#   get category_list_as_html()
 
 if __name__ == '__main__':
     print("You should be using pytest!")

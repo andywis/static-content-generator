@@ -207,6 +207,7 @@ def get_tag_list_as_html():
     nav_page_fmt = '000_nav_tag_%s.html'
     return get_tag_or_category_as_html(tags_file, nav_page_fmt)
 
+
 def get_category_list_as_html():
     """
     Generate a <UL> list of categories to be injected into the template
@@ -214,7 +215,8 @@ def get_category_list_as_html():
     categories_file = os.path.join(CONFIG['output_path'], '000_categories.json')
     nav_page_fmt = '000_nav_category_%s.html'
     return get_tag_or_category_as_html(categories_file, nav_page_fmt)
-   
+
+
 def get_tag_or_category_as_html(data_file, nav_page_fmt):
     """ Does both Tags and Categories, as the logic is identical """
     if os.path.exists(data_file):
@@ -274,7 +276,8 @@ def make_pages_from_template(templates_dir, output_dir):
 
                 # everything about a page:
                 #   - file_path (source file)
-                #   - theme_name (from config, could be overridden in the metadata)
+                #   - theme_name (from config, could be overridden in
+                #                 the metadata)
                 #   - article_data
                 #   - template (name of the template to use)
                 #   - output_file_path (currently same as source path; could be
