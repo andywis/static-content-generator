@@ -42,7 +42,10 @@ CONFIG = {
 
 def html_encode(text):
     """ Encode the text for web pages; convert anything
-    that's non-ASCII into its XML/HTML representation."""
+    that's non-ASCII into its XML/HTML representation.
+
+    text must be a unicode string
+    """
     return text.encode('ascii', 'xmlcharrefreplace')
 
 
@@ -87,7 +90,7 @@ def get_back_path(path_to_file):
         path_to_file = path_to_file[2:]
 
     num_dirs = path_to_file.count('/')
-    return ('../' * num_dirs)
+    return '../' * num_dirs
 
 
 class HtmlFileReader:
@@ -158,9 +161,6 @@ class HtmlFileReader:
 
         return {'content': page_content, 'title': title, 'meta': meta_data}
 
-    def find_metadata(self, html_in):
-        """ Find meta-data inside ... """
-        pass
 
 class TemplateWriter:
     def __init__(self, templates_dir):
@@ -198,6 +198,7 @@ class TemplateWriter:
         with open(full_save_path, 'w') as output_fh:
             output_fh.write(template.render(tokens))
 
+
 def get_tag_list_as_html():
     """
     Generate a <UL> list of tags to be injected into the template
@@ -229,6 +230,23 @@ def get_tag_or_category_as_html(data_file, nav_page_fmt):
     return ''
     
 
+def get_template_name(article_data):
+    """
+    Get the template from the config or from the metadata in
+    the article.
+
+    :param article_data: Data as returned by HtmlFileReader;
+        can be an empty dict.
+    :return: the template name
+    """
+    template = CONFIG['default_template']
+
+    if 'meta' in article_data.keys():
+        if 'template' in article_data['meta'].keys():
+            print("  custom template: " + article_data['meta']['template'])
+            template = article_data['meta']['template']
+
+    return template
 
 
 def make_pages_from_template(templates_dir, output_dir):
@@ -242,14 +260,11 @@ def make_pages_from_template(templates_dir, output_dir):
                     print("Writing %s from %s" % (file_path, input_source))
 
                 theme_name = CONFIG['theme']
-                template = CONFIG['default_template']
 
                 article_data = HtmlFileReader(
                     os.path.join(input_source, file_path)).read()
 
-                if 'template' in article_data['meta'].keys():
-                    print("  custom template: " + article_data['meta']['template'])
-                    template = article_data['meta']['template']
+                template = get_template_name(article_data)
 
                 tokens = {'title': article_data['title'],
                           'article': article_data['content'],

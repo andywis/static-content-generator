@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-# Tests for AWCM (see make.py)
+# encoding: utf-8
+# Tests for AWCM (run with pytest ./tests.py)
 
-from awcm.awcm import HtmlFileReader
+from awcm.awcm import get_back_path, HtmlFileReader, \
+    get_template_name, html_encode
 
 
 def test_read_content():
@@ -84,11 +86,86 @@ def test_bad_meta_tag():
     assert 'tags' not in parts['meta']
 
 
-if __name__ == '__main__':
-    test_read_content()
-    test_read_title_tag()
-    test_read_metadata()
-    test_read_category_metadata()
-    test_bad_meta_tag()
+# --------------
+# get_back_path()
+# --------------
+def test_back_path_two_subdirs():
+    """ get_back_path takes a file path and returns
+       the necessary path to return to the root dir. """
+    actual = get_back_path("/foo/bar")
+    assert actual == "../../"
 
-    print('End')
+
+def test_back_path_double_slash():
+    # double forward-slashes get corrected
+    actual = get_back_path("/foo//bar")
+    assert actual == "../../"
+
+
+def test_back_path_with_leading_dot_slash():
+    # Paths starting with a ./
+    actual = get_back_path("./aaa/bbb")
+    assert actual == "../"
+
+
+# --------------
+# get_template()
+# --------------
+def test_get_template():
+    # Getting the template from config
+    default_template_name = "common.thtml"
+    template = get_template_name({})
+    assert template == default_template_name
+
+
+def test_get_template_from_metadata():
+    # Getting the template from the content metadata.
+    metadata_template_name = "aaaa"
+    article_data = {'meta': {'template': 'aaaa'}}
+    template = get_template_name(article_data)
+    assert template == metadata_template_name
+
+
+# ----------------------------
+# html_encode
+# ----------------------------
+def test_html_encode_plain_ascii():
+    assert "3.49" == html_encode("3.49")
+
+
+def test_html_encode_pound_sterling():
+    assert "&#163;3.49" == html_encode(u"£3.49")
+
+
+def test_html_encode_less_than():
+    # This is valid ASCII
+    assert "aa < bb" == html_encode("aa < bb")
+
+
+def test_html_encode_html():
+    # This is valid ASCII
+    assert "aa <b>bold</b> bb" == html_encode("aa <b>bold</b> bb")
+
+# ----------------------------
+# make_pages_from_templates()
+# ----------------------------
+#  has to be a system test, as we read from and write to files.
+
+
+# The following will need to be System tests, as they interact
+# with the filesystem
+#   mkdir_p - needs to be a system test
+#    get_all_filenames - needs to be a system test
+#   copy_static_files -
+#   HtmlFileReader.load()
+#   HtmlFileReader.read()
+#   TemplateWriter.read()
+#   TemplateWriter.write()
+#       TemplateWriter could take a custom jinja2 loader for
+#       testing purposes.
+# get_tag_or_category_as_html()
+# get_tag_list_as_html()
+# get category_list_as_html()
+
+if __name__ == '__main__':
+    print("You should be using pytest!")
