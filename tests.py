@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# encoding: utf-8
+# coding: utf-8
 # Tests for AWCM (run with pytest ./tests.py)
 
 from awcm.awcm import get_back_path, HtmlFileReader, \
@@ -28,6 +28,45 @@ def test_read_content():
     assert parts['content'] == expected
 
 
+def test_content_no_explicit_body_tag():
+    """ if a <body> tag is not specified, anything that is not
+    a <head> is treated as the body."""
+    hfr = HtmlFileReader('no_filename')
+
+    html_frag = """
+    <head>
+      <title>Gandalf</title>
+    </head>
+    <div>
+        <p>Bilbo Baggins</p>
+        <p>Bard the Bowman</p>
+        <p>Thorin Oakenshield</p>
+    </div>
+    """
+    expected = '''<div>
+<p>Bilbo Baggins</p>
+<p>Bard the Bowman</p>
+<p>Thorin Oakenshield</p>
+</div>
+'''
+    parts = hfr.parse_html(html_frag)
+    assert parts['content'] == expected
+
+
+def test_content_without_body():
+    """ If you don't have any content in your page at all;
+    you'll get this message."""
+    hfr = HtmlFileReader('no_filename')
+
+    html_frag = """
+    <head>
+      <title>Gandalf</title>
+    </head>
+    """
+    parts = hfr.parse_html(html_frag)
+    assert parts['content'] == '[[YOUR CONTENT SHOULD GO HERE]]'
+
+
 def test_read_title_tag():
     hfr = HtmlFileReader('no_filename')
 
@@ -41,6 +80,17 @@ def test_read_title_tag():
     # Ensure both ways of reading titles are available
     assert parts['title'] == 'Gandalf'
     assert parts['meta']['title'] == 'Gandalf'
+
+
+def test_missing_title_tag():
+    hfr = HtmlFileReader('no_filename')
+    html_frag = """
+    <head>
+      <h1>Gandalf</h1>
+      <body>hi</body>
+    """
+    parts = hfr.parse_html(html_frag)
+    assert parts['title'] == '[[NO TITLE FOUND]]'
 
 
 def test_read_metadata():

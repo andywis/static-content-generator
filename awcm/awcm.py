@@ -111,10 +111,8 @@ class HtmlFileReader:
         raw_html = self.load()
         return self.parse_html(raw_html)
 
-    def parse_html(self, html_in):
-        """ Parse an HTML string and extract certain components/elements """
-        soup = BeautifulSoup(html_in, 'lxml')
-
+    def _get_title(self, soup):
+        """ Given a 'Soup' Object, find the title."""
         titles = soup.find_all('title')
         if titles:
             # See https://stackoverflow.com/a/18602241
@@ -123,16 +121,21 @@ class HtmlFileReader:
                 formatter="html")))
         else:
             title = '[[NO TITLE FOUND]]'
+        return title
 
+    def _get_content(self, soup):
+        """ Given a 'Soup' Object, find the page content"""
         page_body = soup.find('body')
-        if page_body.find_next():
+        if page_body is not None and page_body.find_next():
             page_content = html_encode(unicode(page_body.decode_contents(
                 formatter="html")))
         else:
             page_content = '[[YOUR CONTENT SHOULD GO HERE]]'
+        return page_content
 
-        meta_data = {'title': title}
-
+    def _get_meta_data(self, soup):
+        """ Given a 'Soup' Object, find the page meta-data"""
+        meta_data = {}
         all_meta_tags = soup.find_all('meta')
         meta_data['_raw_metas'] = all_meta_tags
         # Valid meta-tags are based on the tags supported by Pelican, with a
@@ -158,7 +161,16 @@ class HtmlFileReader:
                             meta_data[attr] = meta_tag['content']
                         else:
                             meta_data[attr] += ', ' + meta_tag['content']
+        return meta_data
 
+    def parse_html(self, html_in):
+        """ Parse an HTML string and extract certain components/elements """
+        soup = BeautifulSoup(html_in, 'lxml')
+
+        title = self._get_title(soup)
+        page_content = self._get_content(soup)
+        meta_data = self._get_meta_data(soup)
+        meta_data['title'] = title
         return {'content': page_content, 'title': title, 'meta': meta_data}
 
 
