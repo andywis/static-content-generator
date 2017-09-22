@@ -15,7 +15,6 @@ What is this?
         - Page names based on filenames, not slugs.
         - Jinja2 and BeautifulSoup :-)
 
-TODO:
     - *** See index.html for the to do list ***
 
 
@@ -43,7 +42,10 @@ CONFIG = {
 
 def html_encode(text):
     """ Encode the text for web pages; convert anything
-    that's non-ASCII into its XML/HTML representation."""
+    that's non-ASCII into its XML/HTML representation.
+
+    text must be a unicode string
+    """
     return text.encode('ascii', 'xmlcharrefreplace')
 
 
@@ -88,7 +90,7 @@ def get_back_path(path_to_file):
         path_to_file = path_to_file[2:]
 
     num_dirs = path_to_file.count('/')
-    return ('../' * num_dirs)
+    return '../' * num_dirs
 
 
 class HtmlFileReader:
@@ -109,10 +111,8 @@ class HtmlFileReader:
         raw_html = self.load()
         return self.parse_html(raw_html)
 
-    def parse_html(self, html_in):
-        """ Parse an HTML string and extract certain components/elements """
-        soup = BeautifulSoup(html_in, 'lxml')
-
+    def _get_title(self, soup):
+        """ Given a 'Soup' Object, find the title."""
         titles = soup.find_all('title')
         if titles:
             # See https://stackoverflow.com/a/18602241
@@ -121,16 +121,21 @@ class HtmlFileReader:
                 formatter="html")))
         else:
             title = '[[NO TITLE FOUND]]'
+        return title
 
+    def _get_content(self, soup):
+        """ Given a 'Soup' Object, find the page content"""
         page_body = soup.find('body')
-        if page_body.find_next():
+        if page_body is not None and page_body.find_next():
             page_content = html_encode(unicode(page_body.decode_contents(
                 formatter="html")))
         else:
             page_content = '[[YOUR CONTENT SHOULD GO HERE]]'
+        return page_content
 
-        meta_data = {'title': title}
-
+    def _get_meta_data(self, soup):
+        """ Given a 'Soup' Object, find the page meta-data"""
+        meta_data = {}
         all_meta_tags = soup.find_all('meta')
         meta_data['_raw_metas'] = all_meta_tags
         # Valid meta-tags are based on the tags supported by Pelican, with a
@@ -156,12 +161,18 @@ class HtmlFileReader:
                             meta_data[attr] = meta_tag['content']
                         else:
                             meta_data[attr] += ', ' + meta_tag['content']
+        return meta_data
 
+    def parse_html(self, html_in):
+        """ Parse an HTML string and extract certain components/elements """
+        soup = BeautifulSoup(html_in, 'lxml')
+
+        title = self._get_title(soup)
+        page_content = self._get_content(soup)
+        meta_data = self._get_meta_data(soup)
+        meta_data['title'] = title
         return {'content': page_content, 'title': title, 'meta': meta_data}
 
-    def find_metadata(self, html_in):
-        """ Find meta-data inside ... """
-        pass
 
 class TemplateWriter:
     def __init__(self, templates_dir):
@@ -193,10 +204,12 @@ class TemplateWriter:
                                           template_name))
 
         tokens['back_path'] = get_back_path(output_file_path)
+        tokens['theme_path'] = tokens['back_path'] + 'th/' + theme_name + '/'
         full_save_path = os.path.join(output_dir, output_file_path)
 
         with open(full_save_path, 'w') as output_fh:
             output_fh.write(template.render(tokens))
+
 
 def get_tag_list_as_html():
     """
@@ -206,6 +219,7 @@ def get_tag_list_as_html():
     nav_page_fmt = '000_nav_tag_%s.html'
     return get_tag_or_category_as_html(tags_file, nav_page_fmt)
 
+
 def get_category_list_as_html():
     """
     Generate a <UL> list of categories to be injected into the template
@@ -213,7 +227,8 @@ def get_category_list_as_html():
     categories_file = os.path.join(CONFIG['output_path'], '000_categories.json')
     nav_page_fmt = '000_nav_category_%s.html'
     return get_tag_or_category_as_html(categories_file, nav_page_fmt)
-   
+
+
 def get_tag_or_category_as_html(data_file, nav_page_fmt):
     """ Does both Tags and Categories, as the logic is identical """
     if os.path.exists(data_file):
@@ -229,6 +244,23 @@ def get_tag_or_category_as_html(data_file, nav_page_fmt):
     return ''
     
 
+def get_template_name(article_data):
+    """
+    Get the template from the config or from the metadata in
+    the article.
+
+    :param article_data: Data as returned by HtmlFileReader;
+        can be an empty dict.
+    :return: the template name
+    """
+    template = CONFIG['default_template']
+
+    if 'meta' in article_data.keys():
+        if 'template' in article_data['meta'].keys():
+            print("  custom template: " + article_data['meta']['template'])
+            template = article_data['meta']['template']
+
+    return template
 
 
 def make_pages_from_template(templates_dir, output_dir):
@@ -242,14 +274,11 @@ def make_pages_from_template(templates_dir, output_dir):
                     print("Writing %s from %s" % (file_path, input_source))
 
                 theme_name = CONFIG['theme']
-                template = CONFIG['default_template']
 
                 article_data = HtmlFileReader(
                     os.path.join(input_source, file_path)).read()
 
-                if 'template' in article_data['meta'].keys():
-                    print("  custom template: " + article_data['meta']['template'])
-                    template = article_data['meta']['template']
+                template = get_template_name(article_data)
 
                 tokens = {'title': article_data['title'],
                           'article': article_data['content'],
@@ -259,7 +288,8 @@ def make_pages_from_template(templates_dir, output_dir):
 
                 # everything about a page:
                 #   - file_path (source file)
-                #   - theme_name (from config, could be overridden in the metadata)
+                #   - theme_name (from config, could be overridden in
+                #                 the metadata)
                 #   - article_data
                 #   - template (name of the template to use)
                 #   - output_file_path (currently same as source path; could be
