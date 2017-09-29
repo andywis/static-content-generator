@@ -20,10 +20,11 @@ Create the folder structure as follows:
      static
      templates
          common.thtml
+         navigation.thtml
 ```
 The "static" folder is for files that won't change, e.g. CSS and Javascript files.
 The "templates" folder should contain "Jinja2" style templates, and at minimum needs
-a templates file called common.thtml
+a templates file called common.thtml, and one called navigation.thtml
 
 Within the template, variables are injected with double-curly brackets. The content
 generator injects values such as the **title** and **article** (the content) into
@@ -47,3 +48,6 @@ folder.
     </body>
 </html>
 ```
+
+The navigation.thtml file is used for auto-generated listing pages (e.g. the tags and categories
+pages).
