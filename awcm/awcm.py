@@ -205,7 +205,7 @@ class TemplateWriter:
                                           template_name))
 
         tokens['back_path'] = get_back_path(output_file_path)
-        tokens['theme_path'] = tokens['back_path'] + 'th/' + theme_name + '/'
+        tokens['theme_path'] = tokens['back_path'] + 'themes/' + theme_name + '/'
         full_save_path = os.path.join(output_dir, output_file_path)
 
         with open(full_save_path, 'w') as output_fh:
@@ -335,13 +335,13 @@ def main():
     # Ensure _meta and output folders exist
     mkdir_p(CONFIG['output_path'])
     mkdir_p('_meta')
-    mkdir_p(os.path.join(CONFIG['output_path'], 'th'))
+    mkdir_p(os.path.join(CONFIG['output_path'], 'themes'))
 
     make_pages_from_template(templates_dir=CONFIG['templates_dir'],
                              output_dir=CONFIG['output_path'])
 
     theme = CONFIG['theme']
-    theme_static_dir = os.path.join(CONFIG['output_path'], 'th', theme)
+    theme_static_dir = os.path.join(CONFIG['output_path'], 'themes', theme)
     mkdir_p(theme_static_dir)
 
     copy_static_files(templates_dir=CONFIG['templates_dir'], theme_name=theme,
