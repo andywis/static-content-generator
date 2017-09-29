@@ -68,11 +68,11 @@ def copy_static_files(templates_dir, theme_name, output_dir):
     """ Copy the static files for the specified theme """
     source_dir = os.path.join(templates_dir, theme_name, 'static')
     destination = output_dir
-    for file in os.listdir(source_dir):
-        print("Copy %s" % file)
-        if os.path.isfile(os.path.join(source_dir, file)):
+    for filename in os.listdir(source_dir):
+        print("Copy %s" % filename)
+        if os.path.isfile(os.path.join(source_dir, filename)):
             print('copying file')
-            shutil.copy(os.path.join(source_dir, file),
+            shutil.copy(os.path.join(source_dir, filename),
                         destination)
         # We don't currently copy folders. If we did, shutil.copytree
         # would be the tool to use.
@@ -194,6 +194,7 @@ class TemplateWriter:
             output_file_path: full relative path to the file being saved
             theme_name: name of the theme
             template_name: name of the template
+            tokens: Template tokens
         """
 
         if template_name[-6:] != '.thtml':
@@ -224,7 +225,8 @@ def get_category_list_as_html():
     """
     Generate a <UL> list of categories to be injected into the template
     """
-    categories_file = os.path.join(CONFIG['output_path'], '000_categories.json')
+    categories_file = os.path.join(CONFIG['output_path'],
+                                   '000_categories.json')
     nav_page_fmt = '000_nav_category_%s.html'
     return get_tag_or_category_as_html(categories_file, nav_page_fmt)
 
@@ -237,7 +239,8 @@ def get_tag_or_category_as_html(data_file, nav_page_fmt):
             html = ['<ul>']
             for tag in all_tags.keys():
                 url = nav_page_fmt % tag
-                html.append('<li><a href="%s">%s</a> (%d)</li>' % (url, tag, len(all_tags[tag])))
+                html.append('<li><a href="%s">%s</a> (%d)</li>' %
+                            (url, tag, len(all_tags[tag])))
             html.append('</ul>')
             # print(html)
             return ''.join(html)
@@ -263,6 +266,23 @@ def get_template_name(article_data):
     return template
 
 
+def get_theme_name(article_data):
+    """
+    Get the theme name from either the config or the metadata in
+    the article
+    :param article_data:
+    :return: the theme name
+    """
+    theme = CONFIG['theme']
+
+    if 'meta' in article_data.keys():
+
+        if 'theme' in article_data['meta'].keys():
+            print("  custom theme: " + article_data['meta']['theme'])
+            theme = article_data['meta']['theme']
+    return theme
+
+
 def make_pages_from_template(templates_dir, output_dir):
     t = TemplateWriter(templates_dir)
 
@@ -273,12 +293,11 @@ def make_pages_from_template(templates_dir, output_dir):
                 if CONFIG['debug']:
                     print("Writing %s from %s" % (file_path, input_source))
 
-                theme_name = CONFIG['theme']
-
                 article_data = HtmlFileReader(
                     os.path.join(input_source, file_path)).read()
 
                 template = get_template_name(article_data)
+                theme_name = get_theme_name(article_data)
 
                 tokens = {'title': article_data['title'],
                           'article': article_data['content'],

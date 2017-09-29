@@ -3,7 +3,7 @@
 # Tests for AWCM (run with pytest ./tests.py)
 
 from awcm.awcm import get_back_path, HtmlFileReader, \
-    get_template_name, html_encode
+    get_template_name, get_theme_name, html_encode
 
 
 def test_read_content():
@@ -135,6 +135,21 @@ def test_bad_meta_tag():
     # No category stuff, and we should NOT throw an exception
     assert 'tags' not in parts['meta']
 
+def test_custom_theme():
+    hfr = HtmlFileReader('no_filename')
+    # This meta tag doesn't have a "content" attribute.
+    html_frag = """
+    <head>
+      <title>Gandalf</title>
+      <meta name="theme" content="lotr"/>
+      <body>Hi</body>
+    """
+    parts = hfr.parse_html(html_frag)
+
+    # No category stuff, and we should NOT throw an exception
+    assert 'theme' in parts['meta']
+    assert parts['meta']['theme'] == 'lotr'
+
 
 # --------------
 # get_back_path()
@@ -174,6 +189,21 @@ def test_get_template_from_metadata():
     article_data = {'meta': {'template': 'aaaa'}}
     template = get_template_name(article_data)
     assert template == metadata_template_name
+
+
+# --------------
+# get_theme()
+# --------------
+def test_get_theme_from_metadata():
+    article_data = {'meta': {'theme': 'pony'}}
+    theme = get_theme_name(article_data)
+    assert theme == 'pony'
+
+
+def test_get_theme_from_default():
+    article_data = {'meta': {'template': 'abababa'}}
+    theme = get_theme_name(article_data)
+    assert theme == 'balquidhur'  # the hard-wired default
 
 
 # ----------------------------
