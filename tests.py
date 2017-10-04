@@ -226,6 +226,26 @@ def test_html_encode_html():
     # This is valid ASCII
     assert "aa <b>bold</b> bb" == html_encode("aa <b>bold</b> bb")
 
+
+# ----------------------------
+# fix_incomplete_html
+# ----------------------------
+def test_fixing_html():
+    input_str = """<div>bla bla <ul><li>item 1"""
+    expected = """<div>bla bla<ul><li>item 1</li></ul></div>"""
+    inner_body = HtmlFileReader('/dev/null').fix_incomplete_html(input_str)
+    assert inner_body == expected
+
+
+def test_broken_html_unclosed_tag():
+    # Ensure an unclosed tag e.g. '<li' gets fixed.
+    input_str = """<div>hello<ul><li"""
+
+    expected = """<div>hello<ul><li></li></ul></div>"""
+    inner_body = HtmlFileReader('/dev/null').fix_incomplete_html(input_str)
+    assert inner_body == expected
+
+
 # ----------------------------
 # make_pages_from_templates()
 # ----------------------------
