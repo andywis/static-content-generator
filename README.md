@@ -1,13 +1,15 @@
 
 # To Do
-After running "pip install -e .", I still have to run "pip install -r requirements". This can be fixed. How?
+After running "pip install -e .", I still have to run "pip install -r
+requirements". This can be fixed. How?
 
 
 You can run the content generator from a Makefile like this:
 
 ```
 web:
-    source ~/venv/awcm/bin/activate && python -c "from awcm import awcm; awcm.main()"
+    source ~/venv/awcm/bin/activate && \
+    python -c "from awcm import awcm; awcm.main()"
 ```
 (ensure you have leading tabs on the indented line!)
 
@@ -22,15 +24,15 @@ Create the folder structure as follows:
          common.thtml
          navigation.thtml
 ```
-The "static" folder is for files that won't change, e.g. CSS and Javascript files.
-The "templates" folder should contain "Jinja2" style templates, and at minimum needs
-a templates file called common.thtml, and one called navigation.thtml
+The "static" folder is for files that won't change, e.g. CSS and Javascript
+files. The "templates" folder should contain "Jinja2" style templates, and
+at minimum needs a templates file called common.thtml, and one called
+navigation.thtml
 
-Within the template, variables are injected with double-curly brackets. The content
-generator injects values such as the **title** and **article** (the content) into
-the page with these mechanisms. A simple
-template might look like this; you would save the file "style.css" to the "static"
-folder.
+Within the template, variables are injected with double-curly brackets.
+The content generator injects values such as the **title** and **article**
+(the content) into the page with these mechanisms. A simple template might
+look like this; you would save the file "style.css" to the  "static" folder.
 
 ```
 <html>
@@ -49,5 +51,6 @@ folder.
 </html>
 ```
 
-The navigation.thtml file is used for auto-generated listing pages (e.g. the tags and categories
+The navigation.thtml file is used for auto-generated listing pages (e.g.
+the tags and categories
 pages).
