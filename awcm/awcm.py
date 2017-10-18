@@ -329,7 +329,12 @@ def make_pages_from_template(templates_dir, output_dir):
                 #           overridden in metadata)
 
                 full_output_path = os.path.join(output_dir, file_path)
-                
+
+                # Make the folder
+                full_output_dir = os.path.dirname(full_output_path)
+                if not os.path.exists(full_output_dir):
+                    os.makedirs(full_output_dir)
+
                 t.write(output_dir=output_dir,
                         output_file_path=file_path,
                         theme_name=theme_name,
