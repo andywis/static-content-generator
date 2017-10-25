@@ -226,22 +226,22 @@ class TemplateWriter:
             output_fh.write(template.render(tokens))
 
 
-def get_tag_list_as_html():
+def get_tag_list_as_html(back_path=''):
     """
     Generate a <UL> list of tags to be injected into the template
     """
     tags_file = os.path.join(CONFIG['output_path'], '000_tags.json')
-    nav_page_fmt = '000_nav_tag_%s.html'
+    nav_page_fmt = back_path + '000_nav_tag_%s.html'
     return get_tag_or_category_as_html(tags_file, nav_page_fmt)
 
 
-def get_category_list_as_html():
+def get_category_list_as_html(back_path=''):
     """
     Generate a <UL> list of categories to be injected into the template
     """
     categories_file = os.path.join(CONFIG['output_path'],
                                    '000_categories.json')
-    nav_page_fmt = '000_nav_category_%s.html'
+    nav_page_fmt = back_path + '000_nav_category_%s.html'
     return get_tag_or_category_as_html(categories_file, nav_page_fmt)
 
 
@@ -313,10 +313,13 @@ def make_pages_from_template(templates_dir, output_dir):
                 template = get_template_name(article_data)
                 theme_name = get_theme_name(article_data)
 
+                back_path = get_back_path(file_path)
                 tokens = {'title': article_data['title'],
                           'article': article_data['content'],
-                          'tags_html': get_tag_list_as_html(),
-                          'categories_html': get_category_list_as_html(),
+                          'tags_html': get_tag_list_as_html(
+                              back_path=back_path),
+                          'categories_html': get_category_list_as_html(
+                              back_path=back_path),
                           }
 
                 # everything about a page:
