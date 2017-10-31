@@ -2,8 +2,13 @@
 # coding: utf-8
 # Tests for AWCM (run with pytest ./tests.py)
 
+import os
+
+import pytest
+
 from awcm.awcm import get_back_path, HtmlFileReader, \
-    get_template_name, get_theme_name, html_encode
+    get_template_name, get_theme_name, html_encode, \
+    fix_incomplete_html, mkdir_p
 
 
 def test_read_content():
@@ -233,7 +238,7 @@ def test_html_encode_html():
 def test_fixing_html():
     input_str = """<div>bla bla <ul><li>item 1"""
     expected = """<div>bla bla<ul><li>item 1</li></ul></div>"""
-    inner_body = HtmlFileReader('/dev/null').fix_incomplete_html(input_str)
+    inner_body = fix_incomplete_html(input_str)
     assert inner_body == expected
 
 
@@ -242,21 +247,57 @@ def test_broken_html_unclosed_tag():
     input_str = """<div>hello<ul><li"""
 
     expected = """<div>hello<ul><li></li></ul></div>"""
-    inner_body = HtmlFileReader('/dev/null').fix_incomplete_html(input_str)
+    inner_body = fix_incomplete_html(input_str)
     assert inner_body == expected
 
-
-# ----------------------------
-# make_pages_from_templates()
-# ----------------------------
-#  has to be a system test, as we read from and write to files.
-
-
+#
+# -------------------------------------------
+#
+#          S Y S T E M   T E S T S
+#
+# -------------------------------------------
+#
 # The following will need to be System tests, as they interact
 # with the filesystem
-#   mkdir_p - needs to be a system test
+#   mkdir_p()
+#
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_mkdir_p():
+    """mkdir_p creates a folder if it does not exist.
+    It does NOT create subfolders. """
+
+    temp_dir_name = os.tempnam()
+    assert not os.path.exists(temp_dir_name)
+    mkdir_p(temp_dir_name)
+    assert os.path.exists(temp_dir_name)
+    
+    # Tidy up
+    os.rmdir(temp_dir_name)
+
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_mkdir_p_does_not_create_subdirs():
+    """ mkdir_p does not create multiple subdirs at once.
+    Attempting to do so will result in an OSError """
+    temp_dir_name = os.tempnam()
+    long_path = os.path.join(temp_dir_name, 'aaa', 'bbb')
+    assert not os.path.exists(temp_dir_name)
+    # assert this raises an OSError
+    with pytest.raises(OSError):
+        mkdir_p(long_path)
+
+
+
+
+# make_pages_from_templates()
+#    has to be a system test, as we read from and write to files.
+#
 #    get_all_filenames - needs to be a system test
-#   copy_static_files -
+#         N.B. doesn't work with '.' as an arg.
+#
+#   copy_static_files
+#
 #   HtmlFileReader.load()
 #   HtmlFileReader.read()
 #       lots of filesystem interaction.

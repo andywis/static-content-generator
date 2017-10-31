@@ -30,6 +30,15 @@ META_DIR = '../_meta'
 SITEMAP_FILE = '000_nav_all_files.html'
 CATEGORY_FILE_FMT = '000_nav_%s_%s.html'
 
+# ----------
+#        Duplicated from 001_make_homepage
+# Max size of previews. "Max Preview Length" is the trigger size
+# truncate_at is the size after truncating. By having a difference
+# between these two, we never see a file with only the final word
+# truncated.
+MAX_PREVIEW_LENGTH = 1500
+TRUNCATE_AT = 1200
+
 
 def create_sitemap():
     """
@@ -57,6 +66,47 @@ def create_sitemap():
 
     with open(os.path.join(META_DIR, SITEMAP_FILE), 'w') as fhout:
         fhout.write("\n".join(sitemap_html))
+
+
+def get_page_summary(page, max_preview_length, truncate_at):
+    """
+    Creates a summary of a page (truncated according to the truncation
+    parameters.)
+
+    Args:
+        page: the relative path to the page
+
+    TODO: Move this method to awcm utils
+
+    Returns a list of HTML portions which are inteneded to be added
+    to an existing list (which will be joined before rendering)
+    """
+    html_bits = []
+    reader = awcm.HtmlFileReader(os.path.join(CONTENT_DIR, page))
+    page_content = reader.read()
+    article_title = page_content['title']
+    full_content = awcm.fix_incomplete_html(page_content['content'])
+
+    is_truncated = False
+    if len(full_content) > max_preview_length:
+        content = awcm.fix_incomplete_html(full_content[0:truncate_at])
+        is_truncated = True
+        opener_link_text = "more... ({} bytes)".format(len(full_content))
+    else:
+        content = full_content
+        opener_link_text = "open..."
+
+    html_bits.append("<h2><a href=\"{0}\">{1}</a></h2>".format(
+        page, article_title))
+    html_bits.append("<div>")
+    html_bits.append(awcm.html_encode(content))
+    html_bits.append("<div style=\"padding-bottom:20px\">")
+    html_bits.append("<a href=\"{0}\">{1}</a></h2>".format(
+        page, opener_link_text))
+    html_bits.append("</div></div><div style=\"clear:both;\"></div><hr/>")
+
+    return html_bits
+
 
 
 def create_category_pages(data_file, keyword_name):
@@ -92,13 +142,11 @@ def create_category_pages(data_file, keyword_name):
                 page_html = [
                     '<meta name="template" content="navigation.thtml" />',
                     '<title>%s</title><body>' % title,
-                    '<ul>'
                 ]
                 for page in pages:
-                    # TODO: load each page and extract a summary, rather than
-                    # just the filename
-                    page_html.append('<li><a href="%s">%s</a>' % (page, page))
-                page_html.append('<ul>')
+                    # N.B. duplicated from 001_make_homepage
+                    page_html = page_html + get_page_summary(
+                        page, MAX_PREVIEW_LENGTH, TRUNCATE_AT)
                 page_html.append('</body>')
                 print("  [info] Saving to %s" % categ_filename)
                 with open(
