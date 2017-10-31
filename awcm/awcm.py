@@ -92,6 +92,20 @@ def get_back_path(path_to_file):
     num_dirs = path_to_file.count('/')
     return '../' * num_dirs
 
+def fix_incomplete_html(in_html):
+    """Fix a block of HTML by adding the missing (closing) tags.
+    returns: a string of HTML equivalent to the input, but with the
+    correct closing tags
+    """
+    soup = BeautifulSoup(in_html, 'lxml')
+    prettified = soup.prettify()
+    # `prettified' is a complete HTML document, including <html> and <body>
+    # tags.  We really want the bit INSIDE the <body> tag
+    inner_body = re.sub('<html>\s+<body>\s+(.*)</body>\s+</html>',
+                        r'\1', prettified, flags=re.S)
+    whitespace_stripped_html = re.sub('\n +', '', inner_body)
+    return whitespace_stripped_html
+
 
 class HtmlFileReader:
     def __init__(self, filename):
@@ -173,19 +187,7 @@ class HtmlFileReader:
         meta_data['title'] = title
         return {'content': page_content, 'title': title, 'meta': meta_data}
 
-    def fix_incomplete_html(self, in_html):
-        """Fix a block of HTML by adding the missing (closing) tags.
-        returns: a string of HTML equivalent to the input, but with the
-        correct closing tags
-        """
-        soup = BeautifulSoup(in_html, 'lxml')
-        prettified = soup.prettify()
-        # `prettified' is a complete HTML document, including <html> and <body>
-        # tags.  We really want the bit INSIDE the <body> tag
-        inner_body = re.sub('<html>\s+<body>\s+(.*)</body>\s+</html>',
-                            r'\1', prettified, flags=re.S)
-        whitespace_stripped_html = re.sub('\n +', '', inner_body)
-        return whitespace_stripped_html
+
 
 
 class TemplateWriter:
