@@ -237,7 +237,7 @@ def test_html_encode_html():
 # ----------------------------
 def test_fixing_html():
     input_str = """<div>bla bla <ul><li>item 1"""
-    expected = """<div>bla bla<ul><li>item 1</li></ul></div>"""
+    expected = """<div>bla bla <ul><li>item 1</li></ul></div>"""
     inner_body = fix_incomplete_html(input_str)
     assert inner_body == expected
 
@@ -246,9 +246,39 @@ def test_broken_html_unclosed_tag():
     # Ensure an unclosed tag e.g. '<li' gets fixed.
     input_str = """<div>hello<ul><li"""
 
+    # html5lib => <div>hello<ul></ul></div>
     expected = """<div>hello<ul><li></li></ul></div>"""
     inner_body = fix_incomplete_html(input_str)
     assert inner_body == expected
+
+def test_fix_incomplete_html_multiple_space_preserved():
+    # Ensure an unclosed tag e.g. '<li' gets fixed.
+    input_str = """<div>Go to <a href="#top">Top</a> of page.<p></p></div>"""
+
+    expected = input_str
+    fixed_html = fix_incomplete_html(input_str)
+    assert fixed_html == expected
+
+def test_fix_incomplete_html_pre():
+    """ Test that multiple spaces in a <pre> tag are preserved when fixing
+    broken/incomplete HTML.
+    """
+    input_str = """<pre>
+Verse:
+C                 F         C
+Amazing grace how sweet the sound
+     C                   G
+That saved a wretch like me
+  C                  F       C
+I once was lost, but now I'm found
+    C         G     C
+Was blind but now I see
+</pre><ul><li"""
+    missing_end = '></li></ul>'
+
+    expected = input_str
+    fixed_html = fix_incomplete_html(input_str)
+    assert fixed_html == expected + missing_end
 
 #
 # -------------------------------------------

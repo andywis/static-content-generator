@@ -20,12 +20,11 @@ What is this?
 
 """
 
-from collections import defaultdict
 import json
 import os
 import re
 import shutil
-import subprocess
+import sys
 
 from bs4 import BeautifulSoup
 import jinja2
@@ -46,7 +45,22 @@ def html_encode(text):
 
     text must be a unicode string
     """
-    return text.encode('ascii', 'xmlcharrefreplace')
+    try:
+        return text.encode('ascii', 'xmlcharrefreplace')
+
+    except UnicodeDecodeError as exc:
+        print("*" * 30)
+        print("Unicode error encountered")
+        mtch =  re.search('in position (\d+):', str(exc))
+        posn = int(mtch.group(1))
+        portion = text[posn-30:posn]
+        portion = re.sub("[\n\r]+", ' [NL] ', portion)
+        print("Chars leading up to position %d: ...%s" % (
+            posn, portion))
+        print("Chars around position %d: ...%s..." % (
+            posn, text[posn-3:posn+6]))
+        print("*" * 30)
+        raise
 
 
 def mkdir_p(path):
@@ -92,19 +106,32 @@ def get_back_path(path_to_file):
     num_dirs = path_to_file.count('/')
     return '../' * num_dirs
 
+
 def fix_incomplete_html(in_html):
-    """Fix a block of HTML by adding the missing (closing) tags.
+    """
+    Fix a block of HTML by adding the missing (closing) tags.
     returns: a string of HTML equivalent to the input, but with the
     correct closing tags
+
+    This is accomplished by reading the HTML into Beautifulsoup.
+    'lxml' and 'html5lib' give slightly different results when
+    processing an incomplete tag at the end of the abbreviated
+    document.
+
+    N.B. in an earlier implementation, I tried using .prettify() but this
+    doesn't add anything useful, and modifies whitespace.
     """
+
     soup = BeautifulSoup(in_html, 'lxml')
-    prettified = soup.prettify()
-    # `prettified' is a complete HTML document, including <html> and <body>
-    # tags.  We really want the bit INSIDE the <body> tag
-    inner_body = re.sub('<html>\s+<body>\s+(.*)</body>\s+</html>',
-                        r'\1', prettified, flags=re.S)
-    whitespace_stripped_html = re.sub('\n +', '', inner_body)
-    return whitespace_stripped_html
+    if sys.version_info[0] < 3:
+        soup_str = unicode(soup)
+    else:
+        soup_str = str(soup)
+    # fish out the the bit INSIDE the <body> tag
+    inner_body = re.sub('.*<body>\s*(.*)</body>.*',
+                        r'\1', soup_str, flags=re.S)
+
+    return inner_body
 
 
 class HtmlFileReader:
@@ -234,7 +261,8 @@ def get_tag_list_as_html(back_path=''):
     """
     tags_file = os.path.join(CONFIG['output_path'], '000_tags.json')
     nav_page_fmt = back_path + '000_nav_tag_%s.html'
-    return get_tag_or_category_as_html(tags_file, nav_page_fmt)
+    return get_tag_or_category_as_html(tags_file, nav_page_fmt,
+        'awcm-tag')
 
 
 def get_category_list_as_html(back_path=''):
@@ -244,18 +272,19 @@ def get_category_list_as_html(back_path=''):
     categories_file = os.path.join(CONFIG['output_path'],
                                    '000_categories.json')
     nav_page_fmt = back_path + '000_nav_category_%s.html'
-    return get_tag_or_category_as_html(categories_file, nav_page_fmt)
+    return get_tag_or_category_as_html(categories_file, nav_page_fmt,
+        'awcm-category')
 
 
-def get_tag_or_category_as_html(data_file, nav_page_fmt):
+def get_tag_or_category_as_html(data_file, nav_page_fmt, css_class):
     """ Does both Tags and Categories, as the logic is identical """
     if os.path.exists(data_file):
         with open(data_file) as data_fh:
             all_tags = json.load(data_fh)
-            html = ['<ul>']
+            html = ['<ul class="{}">'.format(css_class)]
             for tag in all_tags.keys():
                 url = nav_page_fmt % tag
-                html.append('<li><a href="%s">%s</a> (%d)</li>' %
+                html.append('<li><a href="%s">%s</a>&nbsp;(%d)</li> ' %
                             (url, tag, len(all_tags[tag])))
             html.append('</ul>')
             # print(html)
