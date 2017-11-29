@@ -3,21 +3,17 @@
 
 """
 What is this?
-    AWCM (the AndyWis Content Manager, pronounced "Awesome", but that's
-    rather grandiose and arrogant!) is a Static site generator infuenced
+    AWCM (Andy's Web Content Manager, pronounced "Awesome", which is a very
+    ostentatious name for what it is) is a Static site generator influenced
     by Jekyll and Pelican.
 
     I had a go at using Pelican to create web pages; It's generally great,
     but didn't quite meet my needs.
-    See ~/Documents/www/notes.txt on Macbook
+    Some of the things I wanted to do were:
         - Ability to customise the theme on a per-page basis.
         - A *page* for the homepage
         - Page names based on filenames, not slugs.
         - Jinja2 and BeautifulSoup :-)
-
-    - *** See index.html for the to do list ***
-
-
 """
 
 import json
@@ -29,14 +25,44 @@ import sys
 from bs4 import BeautifulSoup
 import jinja2
 
+CONFIG_FILE_NAME = 'config.json'
+
 CONFIG = {
-    'theme': 'balquidhur',
+    'theme': '_not_set_',  # Should be specified in config.json
     'default_template': 'common.thtml',
     'content_dir': './content',
-    'templates_dir': './templates',
+    'themes_root': './themes',
     'output_path': './output',
     'debug': True,
 }
+
+
+def read_site_config(relative_dir=None):
+
+    # Start looking in the current directory for the config file. If
+    # relative_dir is set, use this to adjust the path.
+
+    # look in current dir, and if current dir == 'components', go up a level.
+    # if there's one in components AND the main dir, we load the nearest one.
+    if relative_dir:
+        cfg_location = os.path.join(os.getcwd(), relative_dir,
+                                    CONFIG_FILE_NAME)
+    else:
+        cfg_location = os.path.join(os.getcwd(), CONFIG_FILE_NAME)
+
+    if os.path.exists(cfg_location):
+        with open(cfg_location, 'r') as jsonfh:
+            local_config = json.load(jsonfh)
+    else:
+        # TODO: tidy this up with a custom exception
+        raise Exception('No config file')
+
+    # Mandatory config parameters
+    CONFIG['theme'] = local_config['theme']
+
+    # Optional config parameters
+    if 'default_template' in local_config.keys():
+        CONFIG['default_template'] = local_config['default_template']
 
 
 def html_encode(text):
@@ -51,7 +77,7 @@ def html_encode(text):
     except UnicodeDecodeError as exc:
         print("*" * 30)
         print("Unicode error encountered")
-        mtch =  re.search('in position (\d+):', str(exc))
+        mtch = re.search('in position (\d+):', str(exc))
         posn = int(mtch.group(1))
         portion = text[posn-30:posn]
         portion = re.sub("[\n\r]+", ' [NL] ', portion)
@@ -215,8 +241,6 @@ class HtmlFileReader:
         return {'content': page_content, 'title': title, 'meta': meta_data}
 
 
-
-
 class TemplateWriter:
     def __init__(self, templates_dir):
         template_loader = jinja2.FileSystemLoader(searchpath=templates_dir)
@@ -248,7 +272,8 @@ class TemplateWriter:
                                           template_name))
 
         tokens['back_path'] = get_back_path(output_file_path)
-        tokens['theme_path'] = tokens['back_path'] + 'themes/' + theme_name + '/'
+        tokens['theme_path'] = tokens['back_path'] + 'themes/' + \
+            theme_name + '/'
         full_save_path = os.path.join(output_dir, output_file_path)
 
         with open(full_save_path, 'w') as output_fh:
@@ -262,7 +287,7 @@ def get_tag_list_as_html(back_path=''):
     tags_file = os.path.join(CONFIG['output_path'], '000_tags.json')
     nav_page_fmt = back_path + '000_nav_tag_%s.html'
     return get_tag_or_category_as_html(tags_file, nav_page_fmt,
-        'awcm-tag')
+                                       'awcm-tag')
 
 
 def get_category_list_as_html(back_path=''):
@@ -273,7 +298,7 @@ def get_category_list_as_html(back_path=''):
                                    '000_categories.json')
     nav_page_fmt = back_path + '000_nav_category_%s.html'
     return get_tag_or_category_as_html(categories_file, nav_page_fmt,
-        'awcm-category')
+                                       'awcm-category')
 
 
 def get_tag_or_category_as_html(data_file, nav_page_fmt, css_class):
@@ -385,19 +410,20 @@ def make_pages_from_template(templates_dir, output_dir):
         
 
 def main():
+    read_site_config()
     # Ensure _meta and output folders exist
     mkdir_p(CONFIG['output_path'])
     mkdir_p('_meta')
     mkdir_p(os.path.join(CONFIG['output_path'], 'themes'))
 
-    make_pages_from_template(templates_dir=CONFIG['templates_dir'],
+    make_pages_from_template(templates_dir=CONFIG['themes_root'],
                              output_dir=CONFIG['output_path'])
 
     theme = CONFIG['theme']
     theme_static_dir = os.path.join(CONFIG['output_path'], 'themes', theme)
     mkdir_p(theme_static_dir)
 
-    copy_static_files(templates_dir=CONFIG['templates_dir'], theme_name=theme,
+    copy_static_files(templates_dir=CONFIG['themes_root'], theme_name=theme,
                       output_dir=theme_static_dir)
 
 

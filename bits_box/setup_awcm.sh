@@ -1,27 +1,53 @@
 #!/bin/bash
 #
 # Copy this script into a newly created folder.
-# Edit the SRC_DIR variable below to suit,
+# If you want a theme, uncomment the last few lines, and fix the paths.
 # then run this script (bash ./setup_awcm.sh) to set up.
 #
-SRC_DIR=$HOME/git/github/andywis/AWCM_static_content_generator/
 
-mkdir -p components
-mkdir -p content 
-mkdir -p _meta
-mkdir -p themes
-mkdir -p output
-
-cp ${SRC_DIR}/bits_box/Makefile .
-cp ${SRC_DIR}/bits_box/000_collect_data.py ./components
-cp ${SRC_DIR}/bits_box/999_mksitemap.py ./components
+# Check we've got the tools we need
+git --version
+python --version
+echo -n "virtualenv " && virtualenv --version
 
 
-# Hacks to get things working ... while there are still TODOs
-if [ ! -e "templates" ]; then
-    ln -s themes templates
+# Download the static content generator
+[[ -e _tmp ]] || mkdir _tmp
+cd _tmp
+SRC_DIR=$(pwd)/static-content-generator/
+if [[ ! -d ${SRC_DIR} ]] ; then
+    git clone --depth=1 https://github.com/andywis/static-content-generator.git
+    rm -rf ${SRC_DIR}/.git
 fi
+cd ..
+
+
+# Create the venv
+if [[ ! -d _tmp/venv ]] ; then
+    (
+        cd _tmp
+        virtualenv venv
+        source venv/bin/activate
+        cd ${SRC_DIR}
+        pip install -e .
+    )
+fi
+
+
+# Make the folders
+[[ -e components ]] || mkdir components
+[[ -e content ]] || mkdir content
+[[ -e _meta ]] || mkdir  _meta
+[[ -e themes ]] || mkdir themes
+[[ -e output ]] || mkdir  output
+
+
+# Install the tools
+cp ${SRC_DIR}/bits_box/Makefile ./
+cp ${SRC_DIR}/bits_box/[09]* ./components/
+
+
 # Install a theme
-if [ ! -d themes/balquidhur ]; then
-    cp -r ../q.wis.co.uk/templates/balquidhur ./themes/
-fi
+# if [[ ! -d themes/default_theme ]] ; then
+#     cp -r path/to/a/theme/default_theme ./themes/
+# fi

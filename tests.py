@@ -8,7 +8,8 @@ import pytest
 
 from awcm.awcm import get_back_path, HtmlFileReader, \
     get_template_name, get_theme_name, html_encode, \
-    fix_incomplete_html, mkdir_p
+    fix_incomplete_html, mkdir_p, read_site_config, \
+    CONFIG
 
 
 def test_read_content():
@@ -140,6 +141,7 @@ def test_bad_meta_tag():
     # No category stuff, and we should NOT throw an exception
     assert 'tags' not in parts['meta']
 
+
 def test_custom_theme():
     hfr = HtmlFileReader('no_filename')
     # This meta tag doesn't have a "content" attribute.
@@ -208,7 +210,7 @@ def test_get_theme_from_metadata():
 def test_get_theme_from_default():
     article_data = {'meta': {'template': 'abababa'}}
     theme = get_theme_name(article_data)
-    assert theme == 'balquidhur'  # the hard-wired default
+    assert theme == '_not_set_'  # the hard-wired default
 
 
 # ----------------------------
@@ -251,6 +253,7 @@ def test_broken_html_unclosed_tag():
     inner_body = fix_incomplete_html(input_str)
     assert inner_body == expected
 
+
 def test_fix_incomplete_html_multiple_space_preserved():
     # Ensure an unclosed tag e.g. '<li' gets fixed.
     input_str = """<div>Go to <a href="#top">Top</a> of page.<p></p></div>"""
@@ -258,6 +261,7 @@ def test_fix_incomplete_html_multiple_space_preserved():
     expected = input_str
     fixed_html = fix_incomplete_html(input_str)
     assert fixed_html == expected
+
 
 def test_fix_incomplete_html_pre():
     """ Test that multiple spaces in a <pre> tag are preserved when fixing
@@ -290,8 +294,13 @@ Was blind but now I see
 # The following will need to be System tests, as they interact
 # with the filesystem
 #   mkdir_p()
+#   read_site_config()
 #
 
+
+# --------------
+# mkdir_p()
+# --------------
 @pytest.mark.filterwarnings('ignore: tempnam')
 def test_mkdir_p():
     """mkdir_p creates a folder if it does not exist.
@@ -318,7 +327,76 @@ def test_mkdir_p_does_not_create_subdirs():
         mkdir_p(long_path)
 
 
+# --------------
+# read_site_config()
+# --------------
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_read_site_config_local_cfg():
+    """ Test we can load site config.
+    and that it sets a theme.
+    """
+    temp_dir_name = os.tempnam()
+    os.mkdir(temp_dir_name)
+    os.chdir(temp_dir_name)
+    with open('config.json', 'w') as fh:
+        fh.write('{"theme":"aaa"}')
+    read_site_config()
+    assert CONFIG['theme'] == 'aaa'
 
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_read_site_config_cfg_in_parent_dir():
+    """ Test we can load site config with a relative dir.
+    Create the config in one dir, then cd into a subdir and
+    see if we can read the config, when adding the '..' arg.
+    """
+    temp_dir_name = os.tempnam()
+    os.mkdir(temp_dir_name)
+    os.mkdir(os.path.join(temp_dir_name, 'sub1'))
+    os.chdir(temp_dir_name)
+    with open('config.json', 'w') as fh:
+        fh.write('{"theme":"abc"}')
+    os.chdir(os.path.join(temp_dir_name, 'sub1'))
+    read_site_config('..')
+    assert CONFIG['theme'] == 'abc'
+
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_no_config_file_raises_exception():
+    """ Test that, if a config file doesn't exist, we get an exception."""
+    temp_dir_name = os.tempnam()
+    os.mkdir(temp_dir_name)
+    os.chdir(temp_dir_name)
+    # 'forget' to create the config file right here.
+    with pytest.raises(Exception):
+        read_site_config()
+
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_config_doesnt_have_theme():
+    """ Test that, if the config does not specify a theme, we get
+    an exception."""
+    temp_dir_name = os.tempnam()
+    os.mkdir(temp_dir_name)
+    os.chdir(temp_dir_name)
+    with open('config.json', 'w') as fh:
+        fh.write('{"colour":"red"}')
+    with pytest.raises(KeyError):
+        read_site_config()
+
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_config_can_specify_default_template():
+    """ Test that the config can also specify a template file..
+    """
+    temp_dir_name = os.tempnam()
+    os.mkdir(temp_dir_name)
+    os.chdir(temp_dir_name)
+    with open('config.json', 'w') as fh:
+        fh.write('{"theme":"asdfgh","default_template":"qwerty"}')
+    read_site_config()
+    assert CONFIG['theme'] == 'asdfgh'
+    assert CONFIG['default_template'] == 'qwerty'
 
 # make_pages_from_templates()
 #    has to be a system test, as we read from and write to files.
@@ -341,6 +419,7 @@ def test_mkdir_p_does_not_create_subdirs():
 #   get_tag_or_category_as_html()
 #   get_tag_list_as_html()
 #   get category_list_as_html()
+
 
 if __name__ == '__main__':
     print("You should be using pytest!")
