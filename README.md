@@ -13,6 +13,21 @@ web:
 ```
 (ensure you have leading tabs on the indented line!)
 
+## Setting up.
+**Requirements**<br>
+This program requires Bash, Git, Virtualenv, Pip and Python. 
+
+I developed it
+on a Macbook,  and it should work under Linux. For Windows, I suggest
+you try Cygwin.
+
+**Setting up**<br>
+Copy the file `bits_box/setup_awcm.sh` to a new folder on your computer, 
+then run it. It will `git clone` and set everything up.
+
+You will need to create content in the `content` folder, and you will
+need a theme. (see below)
+
 
 ## To create a theme:
 Create the folder structure as follows:
