@@ -284,7 +284,7 @@ def get_tag_list_as_html(back_path=''):
     """
     Generate a <UL> list of tags to be injected into the template
     """
-    tags_file = os.path.join(CONFIG['output_path'], '000_tags.json')
+    tags_file = os.path.join('_meta', '000_tags.json')
     nav_page_fmt = back_path + '000_nav_tag_%s.html'
     return get_tag_or_category_as_html(tags_file, nav_page_fmt,
                                        'awcm-tag')
@@ -294,8 +294,7 @@ def get_category_list_as_html(back_path=''):
     """
     Generate a <UL> list of categories to be injected into the template
     """
-    categories_file = os.path.join(CONFIG['output_path'],
-                                   '000_categories.json')
+    categories_file = os.path.join('_meta', '000_categories.json')
     nav_page_fmt = back_path + '000_nav_category_%s.html'
     return get_tag_or_category_as_html(categories_file, nav_page_fmt,
                                        'awcm-category')
@@ -401,6 +400,10 @@ def make_pages_from_template(templates_dir, output_dir):
                         tokens=tokens)
                 # TODO: Collect the theme names as we go.
 
+            elif input_source == '_meta' and\
+                    file_path.split('.')[-1] in ['json', 'yml', 'yaml']:
+                # Ignore data files in _meta/
+                pass
             else:
                 if CONFIG['debug']:
                     print("Not Templatising %s" % file_path)
