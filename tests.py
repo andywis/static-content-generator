@@ -9,7 +9,7 @@ import pytest
 from awcm.awcm import get_back_path, HtmlFileReader, \
     get_template_name, get_theme_name, html_encode, \
     fix_incomplete_html, mkdir_p, read_site_config, \
-    CONFIG
+    CONFIG, TemplateWriter
 
 
 def test_read_content():
@@ -304,7 +304,11 @@ Was blind but now I see
 @pytest.mark.filterwarnings('ignore: tempnam')
 def test_mkdir_p():
     """mkdir_p creates a folder if it does not exist.
-    It does NOT create subfolders. """
+    It does NOT create subfolders.
+
+    pytest.mark.filterwarnings is used above these tests to suppress the
+    warning that 'tempnam is a potential security risk to your program'
+    """
 
     temp_dir_name = os.tempnam()
     assert not os.path.exists(temp_dir_name)
@@ -419,6 +423,41 @@ def test_config_can_specify_default_template():
 #   get_tag_or_category_as_html()
 #   get_tag_list_as_html()
 #   get category_list_as_html()
+
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_template_writer_validate_template_with_missing_file():
+    """Verify that validate_template tells us about missing files
+
+    """
+    # SETUP; create common.thtml, but not navigation.thtml
+    temp_dir_name = os.tempnam()
+    _templates_dir = os.path.join(temp_dir_name, 'themes/x/templates')
+    os.makedirs(_templates_dir)
+    with open(os.path.join(_templates_dir, 'common.thtml'), 'w') as fh:
+        fh.write("<p>")
+
+    # THE TEST
+    tw = TemplateWriter(templates_dir=os.path.join(temp_dir_name, 'themes'))
+    assert tw.validate_template('x') is False
+    # Might be good to capture the print()ed text?
+
+
+@pytest.mark.filterwarnings('ignore: tempnam')
+def test_template_writer_validate_template_with_all_files_present():
+    """Verify that validate_template reports OK if all files are present.
+    """
+    # SETUP; create common.thtml, but not navigation.thtml
+    temp_dir_name = os.tempnam()
+    _templates_dir = os.path.join(temp_dir_name, 'themes/x/templates')
+    os.makedirs(_templates_dir)
+    for tmpl in ['common.thtml', 'navigation.thtml']:
+        with open(os.path.join(_templates_dir, tmpl), 'w') as fh:
+            fh.write("<p>")
+
+    # THE TEST
+    tw = TemplateWriter(templates_dir=os.path.join(temp_dir_name, 'themes'))
+    assert tw.validate_template('x') is True
 
 
 if __name__ == '__main__':
