@@ -245,6 +245,7 @@ class TemplateWriter:
     def __init__(self, templates_dir):
         template_loader = jinja2.FileSystemLoader(searchpath=templates_dir)
         self.template_env = jinja2.Environment(loader=template_loader)
+        self._templates_dir = templates_dir
 
     def read(self, template_file):
         """ Read a template file.
@@ -267,9 +268,16 @@ class TemplateWriter:
         if template_name[-6:] != '.thtml':
             template_name = template_name + '.thtml'
 
-        template = self.read(os.path.join(theme_name,
-                                          'templates',
-                                          template_name))
+        try:
+            template = self.read(os.path.join(theme_name,
+                                              'templates',
+                                              template_name))
+        except jinja2.exceptions.TemplateNotFound as exc:
+            # str(exc) gives us the path to the missing template
+            print("\nERROR: Could not read template file: %s\n" %
+                  os.path.join(self._templates_dir, str(exc)))
+            print("Terminating")
+            sys.exit()
 
         tokens['back_path'] = get_back_path(output_file_path)
         tokens['theme_path'] = tokens['back_path'] + 'themes/' + \
@@ -278,6 +286,20 @@ class TemplateWriter:
 
         with open(full_save_path, 'w') as output_fh:
             output_fh.write(template.render(tokens))
+
+    def validate_template(self, theme_name):
+        expected_files = [
+            'templates/common.thtml',
+            'templates/navigation.thtml',
+        ]
+        passed = True
+        for f in expected_files:
+            full_path = os.path.join(self._templates_dir, theme_name, f)
+            if not os.path.exists(full_path):
+                print("\n/!\\  WARNING: Expected template file missing: %s\n" %
+                      full_path)
+                passed = False
+        return passed
 
 
 def get_tag_list_as_html(back_path=''):
@@ -367,6 +389,8 @@ def make_pages_from_template(templates_dir, output_dir):
 
                 template = get_template_name(article_data)
                 theme_name = get_theme_name(article_data)
+
+                t.validate_template(theme_name)
 
                 back_path = get_back_path(file_path)
                 tokens = {'title': article_data['title'],
