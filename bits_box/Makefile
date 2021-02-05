@@ -9,7 +9,7 @@ all: generated web
 
 generated:
 	@echo "Making auto-generated pages"
-	@source ~/venv/awcm/bin/activate && \
+	@source _tmp/venv/bin/activate && \
 	for s in ${GENERATOR_SCRIPTS}; do \
 	    if [ -x "components/$$s" ]; then \
 	        echo $$s; \
@@ -20,7 +20,7 @@ generated:
 
 web:
 	@echo "Templatising all pages"
-	source ~/venv/awcm/bin/activate && \
+	source _tmp/venv/bin/activate && \
 	python -c "from awcm import awcm; awcm.main()"
 
 # Backticks or $()
