@@ -7,8 +7,7 @@
 
 # Check we've got the tools we need
 git --version
-python --version
-echo -n "virtualenv " && virtualenv --version
+python3 --version
 
 
 # Download the static content generator
@@ -26,7 +25,7 @@ cd ..
 if [[ ! -d _tmp/venv ]] ; then
     (
         cd _tmp
-        virtualenv venv
+        python3 -m  venv venv
         source venv/bin/activate
         cd ${SRC_DIR}
         pip install -e .
