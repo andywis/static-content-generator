@@ -111,7 +111,7 @@ content document will look like this:
         <meta ... />
     </head>
     <body>
-        content here
+        content here <br>
     </body>
 </html>
 ```
@@ -123,6 +123,9 @@ content from within the BODY tags, to create the generated page.
 You can put small snippets of CSS and Javascript in the Body, but you should
 keep this as small as possible. As a general rule, Javascript function
 definitions should go in the theme.
+
+**Note** There must be at least one HTML tag inside the \<body\> section.
+A trailing \<br\> will work, as in the example above.
 
 ## Components
 Components are constructed as follows:

@@ -70,14 +70,17 @@ def html_encode(text):
     that's non-ASCII into its XML/HTML representation.
 
     text must be a unicode string
+
+    Returns a bytes object (because it's a legacy Python2 function)
     """
     try:
         return text.encode('ascii', 'xmlcharrefreplace')
 
     except UnicodeDecodeError as exc:
+        # Deprecation Notice: this is probably never needed in Python3-land
         print("*" * 30)
         print("Unicode error encountered")
-        mtch = re.search('in position (\d+):', str(exc))
+        mtch = re.search(r'in position (\d+):', str(exc))
         posn = int(mtch.group(1))
         portion = text[posn-30:posn]
         portion = re.sub("[\n\r]+", ' [NL] ', portion)
@@ -154,7 +157,7 @@ def fix_incomplete_html(in_html):
     else:
         soup_str = str(soup)
     # fish out the the bit INSIDE the <body> tag
-    inner_body = re.sub('.*<body>\s*(.*)</body>.*',
+    inner_body = re.sub(r'.*<body>\s*(.*)</body>.*',
                         r'\1', soup_str, flags=re.S)
 
     return inner_body
@@ -194,6 +197,11 @@ class HtmlFileReader:
         if page_body is not None and page_body.find_next():
             page_content = html_encode(page_body.decode_contents(
                 formatter="html"))
+
+            # Python3 support - convert to a proper string
+            # because html_encode() returns a bytes object
+            if isinstance(page_content, bytes):
+                page_content = page_content.decode('utf-8')
         else:
             page_content = '[[YOUR CONTENT SHOULD GO HERE]]'
         return page_content
