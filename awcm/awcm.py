@@ -183,9 +183,7 @@ class HtmlFileReader:
         titles = soup.find_all('title')
         if titles:
             # See https://stackoverflow.com/a/18602241
-            # decode_contents() may be undocumented.
-            title = html_encode(unicode(titles[0].decode_contents(
-                formatter="html")))
+            title = titles[0].get_text()
         else:
             title = '[[NO TITLE FOUND]]'
         return title
@@ -194,8 +192,8 @@ class HtmlFileReader:
         """ Given a 'Soup' Object, find the page content"""
         page_body = soup.find('body')
         if page_body is not None and page_body.find_next():
-            page_content = html_encode(unicode(page_body.decode_contents(
-                formatter="html")))
+            page_content = html_encode(page_body.decode_contents(
+                formatter="html"))
         else:
             page_content = '[[YOUR CONTENT SHOULD GO HERE]]'
         return page_content

@@ -99,7 +99,7 @@ def get_page_summary(page, max_preview_length, truncate_at):
     html_bits.append("<h2><a href=\"{0}\">{1}</a></h2>".format(
         page, article_title))
     html_bits.append("<div>")
-    html_bits.append(awcm.html_encode(content))
+    html_bits.append(awcm.html_encode(content).decode('UTF-8'))
     html_bits.append("<div style=\"padding-bottom:20px\">")
     html_bits.append("<a href=\"{0}\">{1}</a></h2>".format(
         page, opener_link_text))
@@ -129,7 +129,7 @@ def create_category_pages(data_file, keyword_name):
                 categories = None
                 exit()
 
-            for kateg, pages in categories.iteritems():
+            for kateg, pages in categories.items():
                 print("  [info] %s '%s'. pages: %r" % (keyword_name, kateg,
                                                        pages))
                 

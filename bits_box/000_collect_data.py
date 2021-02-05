@@ -65,7 +65,7 @@ def collect_data():
 
             for category in page_data['meta']['categories'].split(','):
                 if category in categories.keys():
-                    categories[cagetory].append(page)
+                    categories[category].append(page)
                 else:
                     categories[category] = [page] 
 
