@@ -3,7 +3,7 @@
 echo "Creating a sample HTML page"
 cat > ./content/index2.html << 'EOF'
 <head>
-    <title>About</title>
+    <title>SecondPage</title>
     <!-- every page needs a title, which will usually also be the
          H1 heading -->
 
@@ -23,7 +23,7 @@ cat > ./content/index2.html << 'EOF'
          static-content-generator that could do this) -->
 </head>
 <body>
-This is an example page craeted with create_sample_content.sh<br>
+This is an example page created with create_sample_content.sh<br>
 You will want to put your own stuff here.
 </body>
 EOF

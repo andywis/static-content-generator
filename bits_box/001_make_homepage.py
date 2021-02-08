@@ -28,6 +28,7 @@ OUTFILE = os.path.join(META_DIR, 'index.html')
 MAX_PREVIEW_LENGTH = 2700
 TRUNCATE_AT = 2400
 
+
 def main():
     all_content_files = awcm.get_all_filenames(CONTENT_DIR)
 
@@ -42,7 +43,7 @@ def main():
             continue
 
         # Ignore filenames that don't match a pattern
-        if not re.match('\d.*\.html', page_filename):
+        if not re.match(r'[\w\d].*\.html', page_filename):
             continue
 
         reader = awcm.HtmlFileReader(os.path.join(CONTENT_DIR, page_filename))
@@ -50,16 +51,16 @@ def main():
         title = page_content['title']
         full_content = awcm.fix_incomplete_html(page_content['content'])
 
-        is_truncated = False
+        # is_truncated = False
         if len(full_content) > MAX_PREVIEW_LENGTH:
             content = awcm.fix_incomplete_html(full_content[0:TRUNCATE_AT])
-            is_truncated = True
+            # is_truncated = True
             opener_link_text = "more... ({} bytes)".format(len(full_content))
         else:
             content = full_content
             opener_link_text = "open..."
 
-        content = awcm.html_encode(content)
+        content = awcm.html_encode(content).decode('UTF-8')
 
         output.append("<h2><a href=\"{0}\">{1}</a></h2>".format(page_filename,
                                                                 title))
@@ -70,7 +71,8 @@ def main():
                                                             opener_link_text))
         output.append("</div></div>")
 
-    with open (OUTFILE, 'w') as fhout:
+    with open(OUTFILE, 'w') as fhout:
         fhout.write(''.join(output))
+
 
 main()

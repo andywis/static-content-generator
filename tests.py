@@ -3,6 +3,10 @@
 # Tests for AWCM (run with pytest ./tests.py)
 
 import os
+import random
+import shutil
+import string
+import tempfile
 
 import pytest
 
@@ -216,22 +220,23 @@ def test_get_theme_from_default():
 # ----------------------------
 # html_encode
 # ----------------------------
+# TODO: change these so html_encode returns a str not a bytes
 def test_html_encode_plain_ascii():
-    assert "3.49" == html_encode("3.49")
+    assert b"3.49" == html_encode("3.49")
 
 
 def test_html_encode_pound_sterling():
-    assert "&#163;3.49" == html_encode(u"£3.49")
+    assert b"&#163;3.49" == html_encode(u"£3.49")
 
 
 def test_html_encode_less_than():
     # This is valid ASCII
-    assert "aa < bb" == html_encode("aa < bb")
+    assert b"aa < bb" == html_encode("aa < bb")
 
 
 def test_html_encode_html():
     # This is valid ASCII
-    assert "aa <b>bold</b> bb" == html_encode("aa <b>bold</b> bb")
+    assert b"aa <b>bold</b> bb" == html_encode("aa <b>bold</b> bb")
 
 
 # ----------------------------
@@ -298,6 +303,33 @@ Was blind but now I see
 #
 
 
+def create_temporary_filename():
+    """ temp files are prefixed awcm_ to make it easier to identify
+    and delete them.
+
+    if you need to delete the temporary files:
+
+    for d in $(ls -tr $TMPDIR | grep awcm_ ); do
+        rm -r $TMPDIR/${d};
+    done
+    """
+    root = tempfile.gettempdir()
+    chars = string.ascii_letters + string.digits + ".-_:=@^"
+    filename = 'awcm_' + ''.join(random.choice(chars) for _ in range(64))
+    return os.path.join(root, filename)
+
+
+def test_create_temporary_filename():
+    aa = create_temporary_filename()
+    bb = create_temporary_filename()
+    print("")
+    print(aa)
+    print(bb)
+    assert len(aa) == 64 + len(tempfile.gettempdir()) + 6
+    assert len(bb) == 64 + len(tempfile.gettempdir()) + 6
+    assert aa != bb  # chances of them being the same are extremely remote
+
+
 # --------------
 # mkdir_p()
 # --------------
@@ -310,7 +342,7 @@ def test_mkdir_p():
     warning that 'tempnam is a potential security risk to your program'
     """
 
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     assert not os.path.exists(temp_dir_name)
     mkdir_p(temp_dir_name)
     assert os.path.exists(temp_dir_name)
@@ -323,7 +355,7 @@ def test_mkdir_p():
 def test_mkdir_p_does_not_create_subdirs():
     """ mkdir_p does not create multiple subdirs at once.
     Attempting to do so will result in an OSError """
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     long_path = os.path.join(temp_dir_name, 'aaa', 'bbb')
     assert not os.path.exists(temp_dir_name)
     # assert this raises an OSError
@@ -339,13 +371,18 @@ def test_read_site_config_local_cfg():
     """ Test we can load site config.
     and that it sets a theme.
     """
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     os.mkdir(temp_dir_name)
     os.chdir(temp_dir_name)
     with open('config.json', 'w') as fh:
         fh.write('{"theme":"aaa"}')
     read_site_config()
     assert CONFIG['theme'] == 'aaa'
+
+    # Tidy up
+    os.remove(os.path.join(temp_dir_name, 'config.json'))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.rmdir(temp_dir_name)
 
 
 @pytest.mark.filterwarnings('ignore: tempnam')
@@ -354,7 +391,7 @@ def test_read_site_config_cfg_in_parent_dir():
     Create the config in one dir, then cd into a subdir and
     see if we can read the config, when adding the '..' arg.
     """
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     os.mkdir(temp_dir_name)
     os.mkdir(os.path.join(temp_dir_name, 'sub1'))
     os.chdir(temp_dir_name)
@@ -364,23 +401,33 @@ def test_read_site_config_cfg_in_parent_dir():
     read_site_config('..')
     assert CONFIG['theme'] == 'abc'
 
+    # Tidy up
+    shutil.rmtree(os.path.join(temp_dir_name, 'sub1'))
+    os.remove(os.path.join(temp_dir_name, 'config.json'))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.rmdir(temp_dir_name)
+
 
 @pytest.mark.filterwarnings('ignore: tempnam')
 def test_no_config_file_raises_exception():
     """ Test that, if a config file doesn't exist, we get an exception."""
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     os.mkdir(temp_dir_name)
     os.chdir(temp_dir_name)
     # 'forget' to create the config file right here.
     with pytest.raises(Exception):
         read_site_config()
 
+    # Tidy up
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.rmdir(temp_dir_name)
+
 
 @pytest.mark.filterwarnings('ignore: tempnam')
 def test_config_doesnt_have_theme():
     """ Test that, if the config does not specify a theme, we get
     an exception."""
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     os.mkdir(temp_dir_name)
     os.chdir(temp_dir_name)
     with open('config.json', 'w') as fh:
@@ -388,12 +435,17 @@ def test_config_doesnt_have_theme():
     with pytest.raises(KeyError):
         read_site_config()
 
+    # Tidy up
+    os.remove(os.path.join(temp_dir_name, 'config.json'))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.rmdir(temp_dir_name)
+
 
 @pytest.mark.filterwarnings('ignore: tempnam')
 def test_config_can_specify_default_template():
     """ Test that the config can also specify a template file..
     """
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     os.mkdir(temp_dir_name)
     os.chdir(temp_dir_name)
     with open('config.json', 'w') as fh:
@@ -401,6 +453,11 @@ def test_config_can_specify_default_template():
     read_site_config()
     assert CONFIG['theme'] == 'asdfgh'
     assert CONFIG['default_template'] == 'qwerty'
+
+    # Tidy up
+    os.remove(os.path.join(temp_dir_name, 'config.json'))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.rmdir(temp_dir_name)
 
 # make_pages_from_templates()
 #    has to be a system test, as we read from and write to files.
@@ -431,7 +488,7 @@ def test_template_writer_validate_template_with_missing_file():
 
     """
     # SETUP; create common.thtml, but not navigation.thtml
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     _templates_dir = os.path.join(temp_dir_name, 'themes/x/templates')
     os.makedirs(_templates_dir)
     with open(os.path.join(_templates_dir, 'common.thtml'), 'w') as fh:
@@ -442,13 +499,18 @@ def test_template_writer_validate_template_with_missing_file():
     assert tw.validate_template('x') is False
     # Might be good to capture the print()ed text?
 
+    # Tidy up
+    shutil.rmtree(os.path.join(temp_dir_name, 'themes'))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.rmdir(temp_dir_name)
+
 
 @pytest.mark.filterwarnings('ignore: tempnam')
 def test_template_writer_validate_template_with_all_files_present():
     """Verify that validate_template reports OK if all files are present.
     """
     # SETUP; create common.thtml, but not navigation.thtml
-    temp_dir_name = os.tempnam()
+    temp_dir_name = create_temporary_filename()
     _templates_dir = os.path.join(temp_dir_name, 'themes/x/templates')
     os.makedirs(_templates_dir)
     for tmpl in ['common.thtml', 'navigation.thtml']:
@@ -458,6 +520,11 @@ def test_template_writer_validate_template_with_all_files_present():
     # THE TEST
     tw = TemplateWriter(templates_dir=os.path.join(temp_dir_name, 'themes'))
     assert tw.validate_template('x') is True
+
+    # Tidy up
+    shutil.rmtree(os.path.join(temp_dir_name, 'themes'))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    os.rmdir(temp_dir_name)
 
 
 if __name__ == '__main__':
