@@ -1,5 +1,8 @@
 # Make web pages using the AWCM static content generator
 
+# Read the setup instructions to understand where this
+# file should reside.
+
 
 GENERATOR_SCRIPTS=$(shell ls components | egrep '^\d\d\d[-_]')
 
@@ -9,7 +12,7 @@ all: generated web
 
 generated:
 	@echo "Making auto-generated pages"
-	@source _tmp/venv/bin/activate && \
+	@. tools/venv/bin/activate && \
 	for s in ${GENERATOR_SCRIPTS}; do \
 	    if [ -x "components/$$s" ]; then \
 	        echo $$s; \
@@ -20,9 +23,11 @@ generated:
 
 web:
 	@echo "Templatising all pages"
-	source _tmp/venv/bin/activate && \
+	. tools/venv/bin/activate && \
 	python -c "from awcm import awcm; awcm.main()"
 
+# Makefile notes
+# ==============
 # Backticks or $()
 #	- must be OUTSIDE any target
 #   - $() doesn't appear to work, but $(shell ...) does
