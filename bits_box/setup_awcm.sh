@@ -11,23 +11,23 @@ python3 --version
 
 
 # Download the static content generator
-[[ -e _tmp ]] || mkdir _tmp
-cd _tmp
+[[ -e tools ]] || mkdir tools
+cd tools || exit 1
 SRC_DIR=$(pwd)/static-content-generator/
 if [[ ! -d ${SRC_DIR} ]] ; then
     git clone --depth=1 https://github.com/andywis/static-content-generator.git
-    rm -rf ${SRC_DIR}/.git
+    rm -rf "${SRC_DIR}/.git"
 fi
 cd ..
 
 
-# Create the venv
-if [[ ! -d _tmp/venv ]] ; then
+# Create the Python virtualenv
+if [[ ! -d tools/venv ]] ; then
     (
-        cd _tmp
+        cd tools || exit 1
         python3 -m  venv venv
         source venv/bin/activate
-        cd ${SRC_DIR}
+        cd "${SRC_DIR}" || exit 1
         pip install -r requirements.txt
         pip install -e .
     )
@@ -43,8 +43,8 @@ fi
 
 
 # Install the tools
-cp ${SRC_DIR}/bits_box/Makefile ./
-cp ${SRC_DIR}/bits_box/[09]* ./components/
+cp "${SRC_DIR}"/bits_box/Makefile ./
+cp "${SRC_DIR}"/bits_box/[09]* ./components/
 
 
 # Install a theme

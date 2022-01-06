@@ -67,3 +67,6 @@ env/
 venv/
 ENV/
 
+# Misc
+.DS_Store
+
