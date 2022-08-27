@@ -28,6 +28,7 @@ if [[ ! -d tools/venv ]] ; then
         python3 -m  venv venv
         . venv/bin/activate
         cd "${SRC_DIR}" || exit 1
+        # N.B. this installs LXML; it miight be slow
         pip install -r requirements.txt
         pip install -e .
     )
