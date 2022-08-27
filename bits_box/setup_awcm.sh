@@ -26,7 +26,7 @@ if [[ ! -d tools/venv ]] ; then
     (
         cd tools || exit 1
         python3 -m  venv venv
-        source venv/bin/activate
+        . venv/bin/activate
         cd "${SRC_DIR}" || exit 1
         pip install -r requirements.txt
         pip install -e .
