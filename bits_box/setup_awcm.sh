@@ -47,12 +47,9 @@ if [[ ! -d tools/venv ]] ; then
         #
         # N.B. on some Ubuntu systems, you may need to `pip install wheel`
         # so that bs4 will install correctly. (Dec 2012, see Issue #12)
+        pip install --upgrade pip
         pip install -r requirements.txt
-
-        echo "AWCM: TEMPORARY FIX... move bits_box out of the way for now."
-        mv bits_box ../
         pip install -e .
-        mv ../bits_box .
     )
 else
     echo "venv already created in tools/venv"
