@@ -5,9 +5,12 @@
 # then run this script (bash ./setup_awcm.sh) to set up.
 #
 
+
 # Check we've got the tools we need
-git --version
-python3 --version
+# To install these on Ubuntu: sudo apt-get install -y python3-venv git make
+git --version || echo "git is not installed"; exit 1
+python3 --version || echo "python3 is not installed"; exit 1
+make --version || echo "make is not installled"; exit 1
 
 
 # Download the static content generator
