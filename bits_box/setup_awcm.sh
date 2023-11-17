@@ -43,7 +43,10 @@ if [[ ! -d tools/venv ]] ; then
         python3 -m  venv venv
         . venv/bin/activate
         cd "${SRC_DIR}" || exit 1
-        # N.B. this installs LXML; it miight be slow
+        # N.B. this installs LXML; it might be slow
+        #
+        # N.B. on some Ubuntu systems, you may need to `pip install wheel`
+        # so that bs4 will install correctly. (Dec 2012, see Issue #12)
         pip install -r requirements.txt
 
         echo "AWCM: TEMPORARY FIX... move bits_box out of the way for now."
@@ -74,8 +77,9 @@ cp "${SRC_DIR}"/bits_box/[09]* ./components/
 
 
 # Install a theme
-# if [[ ! -d themes/default_theme ]] ; then
-#     cp -r path/to/a/theme/default_theme ./themes/
+echo '{ "theme": "sample_theme" }' > config.json
+# if [[ ! -d themes/sample_theme ]] ; then
+#     cp -r path/to/a/theme/sample_theme ./themes/
 # fi
 
 echo ""
