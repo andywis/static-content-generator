@@ -21,7 +21,9 @@ For the **quick setup instructions** scroll to the bottom of the page
 * Plugin support to allow content to be built programmatically
 
 ## Requirements
+* git CLI
 * Python
+* make
 * Jinja2
 * Beautifulsoup
 * LXML
@@ -43,13 +45,13 @@ Web pages can either be a made up from a single piece of content, or can be
 generated from lots of little bits we'll call "components". 
 
 The source material used to create (whole) web pages is in the "content/"
-folder 
+folder.
 
 The source material used to build pages from components is stored in the
 "components/" folder. These "generated pages" are constructed from the
-"components" and saved in the folder "_meta/" 
+"components" and saved in the folder "\_meta/".
 
-"pages" in "content/" and "generated pages" in "_meta"/ are then merged with
+"pages" in "content/" and "generated pages" in "\_meta"/ are then merged with
 the appropriate theme template (a "skin" if you like) to generate the resultant
 HTML page in the "output/" folder. You need to specify the default theme name
 in a file called 'config.json'. 
@@ -132,13 +134,13 @@ Components are constructed as follows:
 
 1. Any executable program in the "components/" folder that starts with 3
    digits followed by either an underscore or a hyphen is executed (they are 
-   executed in numerical order). Each one writes its data to the "_meta/"
+   executed in numerical order). Each one writes its data to the "\_meta/"
    folder; either writing an unthemed HTML page or a data file.
 
 1. There are two ready-made component generators (000_collect_data.py and 
    999_mksitemap.py) which are used to build the navigation pages (sitemap,
    category listings and tag listings). 000_collect_data.py generates a set
-   of JSON-encoded data files in "_meta/", and 999_mksitemap.py uses these
+   of JSON-encoded data files in "\_meta/", and 999_mksitemap.py uses these
    data files to construct unthemed HTML files
    
 1. Any other component generator can be written that may modify the
