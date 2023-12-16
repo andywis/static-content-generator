@@ -281,3 +281,23 @@ Then create your website:
 * Run `make`
 * The generated content will be created in `output/`. Load it in a browser
 
+## Uploading to your web server
+There is a script called `upload.py` in the `bits_box` folder. This script
+will FTP the files in the `output/` folder to your web server.
+
+Copy `upload.py` to the top level of your project. 
+
+Set up the configuration for the FTP server in the file `config.json` in the
+top level of your project. The file should look like this:
+
+```json
+{
+    "theme": "womble",
+  
+    "ftp_hostname": "ftp.example.com",
+    "ftp_remote_path": "/public_html/test_12345",
+    "ftp_username": "my_username"
+}
+```
+**Note** that the password should not be stored in the config file. `upload.py` 
+will ask to type the password.

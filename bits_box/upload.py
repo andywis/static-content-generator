@@ -1,15 +1,34 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Utility to upload files to a remote FTP server
 
+
+History
+--------
 First working version: 19 Dec 2012
 Updated for AWCM (Python2): 12 Dec 2017
+Bugfixes: 16 Dec 2023
+
+
+Usage
+------
+* Add some fields to config.json, as below
+
+    "ftp_hostname": "ftp.example.com",
+    "ftp_remote_path": "/public_html/test_12345",
+    "ftp_username": "my_username"
+
+* python3 upload.py
+
+
 """
 
 import os
 from ftplib import FTP, error_perm
 import getpass
 import json
+
+DRY_RUN = False  # set to True to avoid making changes
 
 
 def read_from_config_file():
@@ -22,11 +41,10 @@ def read_from_config_file():
     if 'ftp_username' in list(config.keys()):
         ftp_username = config['ftp_username']
     else:
-        ftp_username = raw_input("FTP username: ")
-    if 'ftp_password' in list(config.keys()):
-        ftp_password = config['ftp_password']
-    else:
-        ftp_password = getpass.getpass("FTP password: ")
+        ftp_username = input("FTP username: ")
+
+    # Always prompt for the password. never save it in config
+    ftp_password = getpass.getpass("FTP password: ")
 
     # Ensure there's a leading slash on the remote path.
     if ftp_path[0] != '/':
@@ -67,20 +85,28 @@ def make_folders_on_target(remote_dir, ftp, folders):
     under remote_dir
 
     """
-    debug = False
+    debug = True
     ftp.cwd(remote_dir)
 
-    for f in folders:
+    if debug:
+        print("Ensure these folders exist:")
+        print(json.dumps(folders, indent=4))
+
+    for folder in folders:
+
         if debug:
-            print("Folder %s" % f)
+            print(f"Testing for existence of Folder {folder} in {remote_dir}")
         try:
-            ftp.cwd(f)
-            ftp.cwd('..')
+            previous_pwd = ftp.pwd()
+            ftp.cwd(folder)
+            ftp.cwd(previous_pwd)
+            if ftp.pwd() != previous_pwd:
+                raise Exception("FAIL: Failed to change back to previous folder")
         except error_perm:
             if debug:
-                print("Currently in %s Cannot cd into %s" % (ftp.pwd(), f))
+                print("Currently in %s Cannot cd into %s" % (ftp.pwd(), folder))
 
-            parent_folder = os.path.normpath(os.path.join(f, '..'))
+            parent_folder = os.path.normpath(os.path.join(folder, '..'))
 
             if debug:
                 print("Trying to make parent folders: %s" % parent_folder)
@@ -90,8 +116,12 @@ def make_folders_on_target(remote_dir, ftp, folders):
                 make_folders_on_target('/' + remote_dir, ftp, [parent_folder])
 
             if debug:
-                print("Finished mk-parent-dir. Try mkd on %s" % f)
-            ftp.mkd(f)
+                print("Finished mk-parent-dir. Try mkd on %s" % folder)
+                print("We're currently in %s" % ftp.pwd())
+            if DRY_RUN:
+                print("DRY_RUN: would make folder %s" % folder)
+            else:
+                ftp.mkd(folder)
 
 
 def ftp_files_to_target(local_dir, remote_dir, ftp, file_list):
